@@ -64,7 +64,7 @@ h2{margin:0 0 10px}
 
 <!-- LOGO -->
 <div class="card">
-<img src="6392B158-576E-4AA2-A590-F15FA2386013.jpeg" class="logo">
+<img src="logo.jpg" class="logo">
 </div>
 
 <!-- HEADER -->
@@ -108,31 +108,26 @@ Bz: <span id="bz">--</span>
 </div>
 
 <script>
-
 async function fetchAllData(){
   try{
 
-    // KP
     const kpRes = await fetch("https://services.swpc.noaa.gov/json/planetary_k_index_1m.json");
     const kpData = await kpRes.json();
-    const kp = parseFloat(kpData[kpData.length-1].kp_index);
+    const kp = parseFloat(kpData.at(-1).kp_index);
 
-    // SOLAR WIND
     const swRes = await fetch("https://services.swpc.noaa.gov/json/solar-wind.json");
     const swData = await swRes.json();
-    const latest = swData[swData.length-1];
+    const latest = swData.at(-1);
 
     const speed = Math.round(parseFloat(latest.speed));
     const bz = parseFloat(latest.bz);
 
-    // UPDATE UI
-    document.getElementById("kp").innerText = isNaN(kp) ? "--" : kp.toFixed(1);
-    document.getElementById("solarwind").innerText = isNaN(speed) ? "--" : speed + " km/s";
-    document.getElementById("bz").innerText = isNaN(bz) ? "--" : bz.toFixed(1) + " nT";
+    document.getElementById("kp").innerText = kp.toFixed(1);
+    document.getElementById("solarwind").innerText = speed + " km/s";
+    document.getElementById("bz").innerText = bz.toFixed(1) + " nT";
 
-    // PROPAGATION SCORE
+    // propagation calc
     let score = 0;
-
     if(kp <= 2) score += 2;
     else if(kp <= 4) score += 1;
 
@@ -142,53 +137,38 @@ async function fetchAllData(){
     if(speed < 500) score += 1;
     else score -= 1;
 
-    let prop = "Poor";
-    if(score >= 3) prop = "Good";
-    else if(score >= 1) prop = "Fair";
-
+    let prop = score >= 3 ? "Good" : score >= 1 ? "Fair" : "Poor";
     document.getElementById("prop").innerText = prop;
 
-    // MUF
     let muf = 5 + (score * 2) + (kp * 0.5);
     muf = Math.max(3, Math.min(30, muf));
-
     document.getElementById("muf").innerText = Math.round(muf) + " MHz";
 
-    // BAND LOGIC
     setBand("80m", muf < 10 ? "GOOD" : "POOR");
     setBand("40m", muf < 14 ? "GOOD" : "FAIR");
     setBand("20m", muf > 12 ? "GOOD" : "POOR");
     setBand("15m", muf > 18 ? "GOOD" : "POOR");
     setBand("10m", muf > 24 ? "GOOD" : "POOR");
 
-    // TIME
-    document.getElementById("time").innerText = "Updated: " + new Date().toLocaleTimeString();
-
   }catch(e){
-    console.log(e);
+    console.log("ERROR:", e);
   }
 }
 
 function setBand(band, status){
   const el = document.getElementById(band);
   el.innerText = status;
-
-  el.className =
-    status === "GOOD" ? "good" :
-    status === "FAIR" ? "fair" : "bad";
+  el.className = status === "GOOD" ? "good" : status === "FAIR" ? "fair" : "bad";
 }
 
 function refreshData(){
   fetchAllData();
 }
 
-// INITIAL LOAD
-fetchAllData();
-
-// AUTO REFRESH
+window.onload = fetchAllData;
 setInterval(fetchAllData, 300000);
-
 </script>
+    
 
 </body>
 </html>
