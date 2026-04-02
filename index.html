@@ -9,85 +9,48 @@
 :root{
   --bg:#081325;
   --panel:#10284a;
-  --line:#4db8ff;
   --text:#e7f3ff;
-  --muted:#9cc3e6;
   --good:#65f0a4;
   --fair:#ffd166;
   --bad:#ff6b6b;
 }
-body{
-  margin:0;
-  font-family:Arial;
-  background:#081325;
-  color:var(--text);
-}
+body{margin:0;font-family:Arial;background:var(--bg);color:var(--text);}
 .wrap{max-width:900px;margin:auto;padding:12px}
-.card{
-  background:var(--panel);
-  border-radius:16px;
-  padding:14px;
-  margin-bottom:12px;
-}
+.card{background:var(--panel);border-radius:16px;padding:14px;margin-bottom:12px}
 h2{margin:0 0 10px}
-.btn{
-  background:#183b6e;
-  border:none;
-  padding:10px 14px;
-  border-radius:10px;
-  color:white;
-  cursor:pointer;
-}
-.good{color:var(--good)}
-.fair{color:var(--fair)}
-.bad{color:var(--bad)}
-.bands{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-}
-.band{
-  background:#0c203b;
-  padding:10px;
-  border-radius:10px;
-}
-.logo{
-  width:100%;
-  border-radius:16px;
-}
+.btn{background:#183b6e;border:none;padding:10px 14px;border-radius:10px;color:white;cursor:pointer}
+.good{color:var(--good)} .fair{color:var(--fair)} .bad{color:var(--bad)}
+.bands{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.band{background:#0c203b;padding:10px;border-radius:10px}
+.logo{width:100%;border-radius:16px}
 </style>
 </head>
 
 <body>
-
 <div class="wrap">
 
-<!-- LOGO -->
 <div class="card">
-<img src="logo.jpg" class="logo">
+<!-- TEMP: remove image errors entirely for now -->
+<h2 style="text-align:center;">Natural State Amateur Radio</h2>
 </div>
 
-<!-- HEADER -->
 <div class="card">
 <button class="btn" onclick="refreshData()">Refresh Now</button>
 <div id="time"></div>
 </div>
 
-<!-- SPACE WEATHER -->
 <div class="card">
 <h2>Space Weather</h2>
-Kp: <span id="kp">--</span><br>
-Solar Wind: <span id="solarwind">--</span><br>
-Bz: <span id="bz">--</span>
+Kp: <span id="kp">loading...</span><br>
+Solar Wind: <span id="solarwind">loading...</span><br>
+Bz: <span id="bz">loading...</span>
 </div>
 
-<!-- PROPAGATION -->
 <div class="card">
 <h2>Propagation</h2>
-<div id="prop">--</div>
+<div id="prop">loading...</div>
 </div>
 
-<!-- BAND CONDITIONS -->
 <div class="card">
 <h2>Band Conditions</h2>
 <div class="bands">
@@ -99,7 +62,6 @@ Bz: <span id="bz">--</span>
 </div>
 </div>
 
-<!-- MUF -->
 <div class="card">
 <h2>MUF Estimate</h2>
 <div id="muf">--</div>
@@ -108,67 +70,92 @@ Bz: <span id="bz">--</span>
 </div>
 
 <script>
+function log(msg){ console.log("[NSAR]", msg); }
+
 async function fetchAllData(){
   try{
+    log("Fetching data...");
 
-    const kpRes = await fetch("https://services.swpc.noaa.gov/json/planetary_k_index_1m.json");
-    const kpData = await kpRes.json();
-    const kp = parseFloat(kpData.at(-1).kp_index);
+    // KP
+    let kp = 2; // fallback
+    try{
+      const r = await fetch("https://services.swpc.noaa.gov/json/planetary_k_index_1m.json");
+      const d = await r.json();
+      if(d && d.length){
+        kp = parseFloat(d[d.length-1].kp_index);
+      }
+    }catch(e){ log("Kp failed"); }
 
-    const swRes = await fetch("https://services.swpc.noaa.gov/json/solar-wind.json");
-    const swData = await swRes.json();
-    const latest = swData.at(-1);
+    // Solar Wind
+    let speed = 400, bz = 0; // fallbacks
+    try{
+      const r2 = await fetch("https://services.swpc.noaa.gov/json/solar-wind.json");
+      const d2 = await r2.json();
+      if(d2 && d2.length){
+        const last = d2[d2.length-1];
+        speed = parseFloat(last.speed);
+        bz = parseFloat(last.bz);
+      }
+    }catch(e){ log("Solar wind failed"); }
 
-    const speed = Math.round(parseFloat(latest.speed));
-    const bz = parseFloat(latest.bz);
-
+    // UI
     document.getElementById("kp").innerText = kp.toFixed(1);
-    document.getElementById("solarwind").innerText = speed + " km/s";
+    document.getElementById("solarwind").innerText = Math.round(speed) + " km/s";
     document.getElementById("bz").innerText = bz.toFixed(1) + " nT";
 
-    // propagation calc
+    // Prop logic
     let score = 0;
     if(kp <= 2) score += 2;
     else if(kp <= 4) score += 1;
 
-    if(bz > 0) score += 1;
-    else score -= 1;
+    if(bz > 0) score += 1; else score -= 1;
+    if(speed < 500) score += 1; else score -= 1;
 
-    if(speed < 500) score += 1;
-    else score -= 1;
+    let prop = "Poor";
+    if(score >= 3) prop = "Good";
+    else if(score >= 1) prop = "Fair";
 
-    let prop = score >= 3 ? "Good" : score >= 1 ? "Fair" : "Poor";
     document.getElementById("prop").innerText = prop;
 
+    // MUF
     let muf = 5 + (score * 2) + (kp * 0.5);
-    muf = Math.max(3, Math.min(30, muf));
+    if(muf < 3) muf = 3;
+    if(muf > 30) muf = 30;
+
     document.getElementById("muf").innerText = Math.round(muf) + " MHz";
 
-    setBand("80m", muf < 10 ? "GOOD" : "POOR");
-    setBand("40m", muf < 14 ? "GOOD" : "FAIR");
-    setBand("20m", muf > 12 ? "GOOD" : "POOR");
-    setBand("15m", muf > 18 ? "GOOD" : "POOR");
-    setBand("10m", muf > 24 ? "GOOD" : "POOR");
+    // Bands
+    setBand("80m", muf < 10 ? "GOOD":"POOR");
+    setBand("40m", muf < 14 ? "GOOD":"FAIR");
+    setBand("20m", muf > 12 ? "GOOD":"POOR");
+    setBand("15m", muf > 18 ? "GOOD":"POOR");
+    setBand("10m", muf > 24 ? "GOOD":"POOR");
+
+    document.getElementById("time").innerText = "Updated: " + new Date().toLocaleTimeString();
+
+    log("Done");
 
   }catch(e){
-    console.log("ERROR:", e);
+    console.error("TOTAL FAIL:", e);
   }
 }
 
-function setBand(band, status){
-  const el = document.getElementById(band);
+function setBand(id, status){
+  const el = document.getElementById(id);
   el.innerText = status;
-  el.className = status === "GOOD" ? "good" : status === "FAIR" ? "fair" : "bad";
+  el.className = status==="GOOD"?"good":status==="FAIR"?"fair":"bad";
 }
 
-function refreshData(){
+function refreshData(){ fetchAllData(); }
+
+// FORCE run AFTER DOM ready
+document.addEventListener("DOMContentLoaded", function(){
   fetchAllData();
-}
+});
 
-window.onload = fetchAllData;
-setInterval(fetchAllData, 300000);
+// backup trigger
+setTimeout(fetchAllData, 1500);
 </script>
-    
 
 </body>
 </html>
