@@ -1,1 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Natural State Amateur Radio</title>
 
+<style>
+body { margin:0; font-family:Arial; background:#0b1f3a; color:white;}
+.container { padding:15px; max-width:500px; margin:auto;}
+.card { background:#112b4d; border-radius:15px; padding:15px; margin-bottom:15px;}
+button { background:#1f4e8c; border:none; padding:10px; color:white; border-radius:10px;}
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.band { padding:10px; border-radius:10px; text-align:center; background:#1a3b6b;}
+.good{color:#00ff9c;} .fair{color:#ffd166;} .poor{color:#ff6b6b;}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<div class="card">
+<h1>Natural State Amateur Radio</h1>
+<div>Live HF dashboard for KJ5ATO</div><br>
+<button onclick="loadData()">Refresh Now</button>
+<div id="updated"></div>
+</div>
+
+<div class="card">
+<h2>Space Weather</h2>
+<div>Kp: <span id="kp">--</span></div>
+<div>Solar Wind: <span id="solarWind">--</span></div>
+<div>Bz: <span id="bz">--</span></div>
+</div>
+
+<div class="card">
+<h2>Propagation</h2>
+<div id="prop">--</div>
+</div>
+
+<div class="card">
+<h2>Band Conditions</h2>
+<div class="grid">
+<div class="band" id="b80"></div>
+<div class="band" id="b40"></div>
+<div class="band" id="b20"></div>
+<div class="band" id="b15"></div>
+<div class="band" id="b10"></div>
+</div>
+</div>
+
+<div class="card">
+<h2>MUF Estimate</h2>
+<div id="muf">--</div>
+</div>
+
+</div>
+
+<script>
+async function fetchJSON(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Bad response");
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function loadData() {
+
+  let kp = null, solarWind = null, bz = null;
+
+  // --- Kp ---
+  const kpData = await fetchJSON("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json");
+
+  if (kpData && kpData.length > 1) {
+    kp = parseFloat(kpData[kpData.length - 1][1]);
+    if (isNaN(kp)) kp = null;
+  }
+
+  // --- Solar Wind ---
+  const swData = await fetchJSON("https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json");
+
+  if (swData && swData.length > 1) {
+    const last = swData[swData.length - 1];
+    solarWind = parseFloat(last[1]);
+    bz = parseFloat(last[3]);
+
+    if (isNaN(solarWind)) solarWind = null;
+    if (isNaN(bz)) bz = null;
+  }
+
+  updateUI(kp, solarWind, bz);
+}
+
+function updateUI(kp, solarWind, bz) {
+
+  document.getElementById("kp").textContent = kp ?? "--";
+  document.getElementById("solarWind").textContent = solarWind ? solarWind + " km/s" : "--";
+  document.getElementById("bz").textContent = bz ? bz + " nT" : "--";
+
+  // --- Propagation ---
+  let prop = "Poor";
+
+  if (kp !== null && bz !== null) {
+    if (kp <= 2 && bz < 0) prop = "Excellent";
+    else if (kp <= 3 && bz < 5) prop = "Good";
+    else if (kp <= 4) prop = "Fair";
+  }
+
+  document.getElementById("prop").textContent = prop;
+
+  // --- Bands ---
+  setBand("b80", "80m", "good");
+  setBand("b40", "40m", "good");
+
+  setBand("b20", "20m", (kp !== null && kp <= 3) ? "fair" : "poor");
+  setBand("b15", "15m", (kp !== null && kp <= 2 && bz < 0) ? "good" : "poor");
+  setBand("b10", "10m", (kp !== null && kp <= 2 && bz < 0) ? "fair" : "poor");
+
+  // --- MUF Estimate (better logic) ---
+  let muf = 8;
+
+  if (bz !== null && bz < 0) muf += 8;
+  if (kp !== null && kp <= 2) muf += 6;
+  if (solarWind !== null && solarWind > 500) muf -= 3;
+
+  document.getElementById("muf").textContent = muf + " MHz";
+
+  document.getElementById("updated").textContent =
+    "Updated: " + new Date().toLocaleTimeString();
+}
+
+function setBand(id, name, quality) {
+  const el = document.getElementById(id);
+  el.innerHTML = name + "<br><span class='" + quality + "'>" + quality.toUpperCase() + "</span>";
+}
+
+// Auto load
+loadData();
+</script>
+
+</body>
+</html>
