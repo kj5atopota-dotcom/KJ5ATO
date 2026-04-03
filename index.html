@@ -131,6 +131,16 @@ h2{margin:0 0 10px;font-size:18px}
   .grid{grid-template-columns:1fr}
   .bands{grid-template-columns:1fr 1fr}
 }
+  .dot{
+  display:inline-block;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  margin-left:6px;
+}
+.green{background:#65f0a4;}
+.yellow{background:#ffd166;}
+.red{background:#ff6b6b;}
 </style>
 </head>
 <body>
@@ -149,9 +159,23 @@ h2{margin:0 0 10px;font-size:18px}
   <div class="grid">
     <div class="card">
       <h2>Space Weather</h2>
-      <div class="row"><span class="label">Kp</span><span class="value" id="kp">--</span></div>
-      <div class="row"><span class="label">Solar Wind</span><span class="value" id="wind">-- km/s</span></div>
-      <div class="row"><span class="label">Bz</span><span class="value" id="bz">-- nT</span></div>
+      <div class="row">
+  <span class="label">Kp</span>
+  <span class="value" id="kp"></span>
+  <span id="kpDot" class="dot"></span>
+</div>
+
+<div class="row">
+  <span class="label">Solar Wind</span>
+  <span class="value" id="wind"></span> km/s
+  <span id="windDot" class="dot"></span>
+</div>
+
+<div class="row">
+  <span class="label">Bz</span>
+  <span class="value" id="bz"></span> nT
+  <span id="bzDot" class="dot"></span>
+</div>
     </div>
 
     <div class="card">
@@ -188,6 +212,30 @@ h2{margin:0 0 10px;font-size:18px}
     <div class="card">
 <h3>Advanced Conditions</h3>
 
+ // ===== STATUS DOTS =====
+
+// KP
+let kpColor = "green";
+if (kp >= 5) kpColor = "red";
+else if (kp >= 3) kpColor = "yellow";
+
+document.getElementById("kpDot").className = "dot " + kpColor;
+
+
+// WIND
+let windColor = "green";
+if (wind > 500) windColor = "red";
+else if (wind > 450) windColor = "yellow";
+
+document.getElementById("windDot").className = "dot " + windColor;
+
+
+// BZ
+let bzColor = "green";
+if (bz < -5) bzColor = "red";
+else if (bz < 0) bzColor = "yellow";
+
+document.getElementById("bzDot").className = "dot " + bzColor;     
 <div class="row">
   <span class="label">Noise Level</span>
   <span id="noiseLevel" class="value">--</span>
