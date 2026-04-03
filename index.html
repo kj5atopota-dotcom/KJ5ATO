@@ -298,9 +298,9 @@ function deriveMetrics(kp, wind, bz){
   else if (safeBz > 3 && safeWind < 500) stormText = 'Fairly healthy space weather. Good time to try higher bands.';
 
   let qrpAdvice = 'Hunt strong stations first.';
-  if (qrpScore >= 75) qrpAdvice = 'Good QRP window. Calling CQ should work, especially on the suggested band.';
-  else if (qrpScore >= 50) qrpAdvice = 'Usable QRP conditions. CQ is possible, but hunting may be faster.';
-  else if (safeKp >= 5) qrpAdvice = 'Stormy QRP conditions. Favor 40m or 80m, efficient antennas, and patience.';
+  if (qrpScore >= 75) qrpAdvice = 'Good QRP window. SSB CQ should work, especially on the suggested band.';
+  else if (qrpScore >= 50) qrpAdvice = 'Usable QRP conditions. SSB is possible, but CW-Data more effective.';
+  else if (safeKp >= 5) qrpAdvice = 'Stormy QRP conditions. Favor 40m or 80m, efficient antennas, and patience!.';
   else qrpAdvice = 'Weak QRP conditions. Shorter paths and stronger stations are your best bet.';
 
   return { health, muf, luf, bands, bestBand, qrpBand, qrpScore, stormText, qrpAdvice };
