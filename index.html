@@ -6,175 +6,148 @@
 <title>Natural State Amateur Radio</title>
 
 <style>
-:root{
-  --bg:#081325;
-  --panel:#10284a;
-  --text:#e7f3ff;
-  --good:#65f0a4;
-  --fair:#ffd166;
-  --bad:#ff6b6b;
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0b1e3a;
+    color: #fff;
+    text-align: center;
 }
-body{margin:0;font-family:Arial;background:var(--bg);color:var(--text);}
-.wrap{max-width:900px;margin:auto;padding:12px}
-.card{background:var(--panel);border-radius:16px;padding:14px;margin-bottom:12px}
-h2{margin:0 0 10px}
-.btn{background:#183b6e;border:none;padding:10px 14px;border-radius:10px;color:white;cursor:pointer}
-.good{color:var(--good)} .fair{color:var(--fair)} .bad{color:var(--bad)}
-.bands{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.band{background:#0c203b;padding:10px;border-radius:10px}
-.logo{width:100%;border-radius:16px}
+
+.container {
+    padding: 10px;
+}
+
+h1 {
+    margin: 5px;
+    font-size: 20px;
+}
+
+.logo {
+    max-width: 120px;
+    margin: 10px auto;
+}
+
+.card {
+    background: #132b50;
+    margin: 8px;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+}
+
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #1f6feb;
+    color: white;
+    font-size: 14px;
+}
+
+.small {
+    font-size: 12px;
+    opacity: 0.8;
+}
 </style>
 </head>
 
 <body>
-<div class="wrap">
 
-<!-- 🔥 EMBEDDED LOGO (never breaks) -->
+<div class="container">
+
+<img class="logo" src="logo.png">
+
+<h1>Natural State Amateur Radio</h1>
+<div class="small">KJ5ATO Dashboard</div>
+
+<button onclick="loadData()">🔄 Refresh</button>
+
 <div class="card">
-<img class="logo" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...(trimmed for chat, but works in your file)">
+<h3>Solar Conditions</h3>
+<div>Kp Index: <span id="kp">--</span></div>
+<div>Solar Wind: <span id="wind">--</span></div>
+<div>Bz: <span id="bz">--</span></div>
 </div>
 
 <div class="card">
-<button class="btn" onclick="refreshData()">Refresh Now</button>
-<div id="time"></div>
+<h3>Band Conditions</h3>
+<div>Best Band: <span id="bestBand">--</span></div>
+<div>Noise Level: <span id="noise">--</span></div>
 </div>
 
 <div class="card">
-<h2>Space Weather</h2>
-Kp: <span id="kp">--</span><br>
-Solar Wind: <span id="solarwind">--</span><br>
-Bz: <span id="bz">--</span>
-</div>
-
-<div class="card">
-<h2>Propagation</h2>
-<div id="prop">--</div>
-</div>
-
-<div class="card">
-<h2>Band Conditions</h2>
-<div class="bands">
-<div class="band">80m: <span id="80m">--</span></div>
-<div class="band">40m: <span id="40m">--</span></div>
-<div class="band">20m: <span id="20m">--</span></div>
-<div class="band">15m: <span id="15m">--</span></div>
-<div class="band">10m: <span id="10m">--</span></div>
-</div>
-</div>
-
-<div class="card">
-<h2>MUF Estimate</h2>
-<div id="muf">--</div>
-</div>
-
-<!-- 🔥 POTA QRP -->
-<div class="card">
-<h2>POTA QRP Conditions</h2>
-<div id="qrpBand">Best Band: --</div>
-<div id="qrpScore">Success: --</div>
-<div id="qrpAdvice">Advice: --</div>
+<h3>POTA QRP Tips</h3>
+<div id="pota">Loading...</div>
 </div>
 
 </div>
 
 <script>
-async function fetchAllData(){
-  try{
 
-    const kpRes = await fetch("https://services.swpc.noaa.gov/json/planetary_k_index_1m.json");
-    const kpData = await kpRes.json();
-    const kp = parseFloat(kpData[kpData.length-1].kp_index);
+async function loadData() {
 
-    const swRes = await fetch("https://services.swpc.noaa.gov/json/solar-wind.json");
-    const swData = await swRes.json();
-    const latest = swData[swData.length-1];
+    try {
+        // KP INDEX (REAL NOAA DATA)
+        const kpRes = await fetch("https://services.swpc.noaa.gov/json/planetary_k_index_1m.json");
+        const kpData = await kpRes.json();
+        const latestKp = kpData[kpData.length - 1].kp_index;
 
-    const speed = parseFloat(latest.speed);
-    const bz = parseFloat(latest.bz);
+        document.getElementById("kp").innerText = latestKp;
 
-    document.getElementById("kp").innerText = kp.toFixed(1);
-    document.getElementById("solarwind").innerText = Math.round(speed)+" km/s";
-    document.getElementById("bz").innerText = bz.toFixed(1)+" nT";
+        // WIND / BZ
+        const windRes = await fetch("https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json");
+        const windData = await windRes.json();
+        const lastWind = windData[windData.length - 1];
 
-    // PROP
-    let score = 0;
-    if(kp <= 2) score += 2;
-    else if(kp <= 4) score += 1;
+        document.getElementById("wind").innerText = lastWind[2] + " km/s";
 
-    if(bz > 0) score += 1;
-    else score -= 1;
+        const bzRes = await fetch("https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json");
+        const bzData = await bzRes.json();
+        const lastBz = bzData[bzData.length - 1];
 
-    if(speed < 500) score += 1;
-    else score -= 1;
+        document.getElementById("bz").innerText = lastBz[3] + " nT";
 
-    let prop = score >= 3 ? "Good" : score >= 1 ? "Fair" : "Poor";
-    document.getElementById("prop").innerText = prop;
+        // SIMPLE BAND LOGIC
+        let bestBand = "20m";
+        let noise = "Moderate";
 
-    // MUF
-    let muf = 5 + (score * 2) + (kp * 0.5);
-    muf = Math.max(3, Math.min(30, muf));
-    document.getElementById("muf").innerText = Math.round(muf)+" MHz";
+        if (latestKp >= 5) {
+            bestBand = "40m";
+            noise = "High";
+        } else if (latestKp <= 2) {
+            bestBand = "20m / 17m";
+            noise = "Low";
+        }
 
-    // BANDS (storm-aware)
-    setBand("80m", kp > 5 ? "GOOD" : muf < 10 ? "GOOD" : "FAIR");
-    setBand("40m", kp > 5 ? "GOOD" : muf < 14 ? "GOOD" : "FAIR");
-    setBand("20m", kp > 5 ? "POOR" : muf > 12 ? "GOOD" : "FAIR");
-    setBand("15m", (muf > 18 && kp < 4) ? "GOOD" : "POOR");
-    setBand("10m", (muf > 24 && kp < 3) ? "GOOD" : "POOR");
+        document.getElementById("bestBand").innerText = bestBand;
+        document.getElementById("noise").innerText = noise;
 
-    // 🔥 POTA QRP
-    updateQRP(muf, kp, speed, bz);
+        // POTA QRP ADVICE
+        let potaText = "";
 
-    document.getElementById("time").innerText = "Updated: " + new Date().toLocaleTimeString();
+        if (latestKp >= 5) {
+            potaText = "Use 40m, low noise locations, vertical or EFHW. Expect rough conditions.";
+        } else if (latestKp <= 2) {
+            potaText = "20m hot. QRP SSB and FT8 should perform great. Go portable!";
+        } else {
+            potaText = "Mixed conditions. Try 20m daytime, 40m evening.";
+        }
 
-  }catch(e){
-    console.log(e);
-  }
+        document.getElementById("pota").innerText = potaText;
+
+    } catch (err) {
+        console.log(err);
+    }
 }
 
-function setBand(id, status){
-  const el = document.getElementById(id);
-  el.innerText = status;
-  el.className = status==="GOOD"?"good":status==="FAIR"?"fair":"bad";
-}
+loadData();
 
-function updateQRP(muf, kp, speed, bz){
-
-  let score = 0;
-
-  if(kp <= 2) score += 3;
-  else if(kp <= 4) score += 2;
-  else if(kp <= 6) score += 1;
-  else score -= 2;
-
-  if(speed < 450) score += 2;
-  else if(speed < 550) score += 1;
-  else score -= 1;
-
-  if(bz > 0) score += 1;
-  else score -= 1;
-
-  let band = "40m";
-  if(kp > 5) band = "40m / 80m";
-  else if(muf > 24) band = "10m";
-  else if(muf > 18) band = "15m";
-  else if(muf > 12) band = "20m";
-
-  let rating = score >= 5 ? "HIGH" : score >= 2 ? "MODERATE" : "LOW";
-
-  let advice = "Wait / Hunt";
-  if(rating==="HIGH") advice = "CALL CQ";
-  else if(rating==="MODERATE") advice = "CQ possible";
-
-  document.getElementById("qrpBand").innerText = "Best Band: " + band;
-  document.getElementById("qrpScore").innerText = "Success: " + rating;
-  document.getElementById("qrpAdvice").innerText = "Advice: " + advice;
-}
-
-function refreshData(){ fetchAllData(); }
-
-fetchAllData();
-setInterval(fetchAllData, 300000);
 </script>
 
 </body>
