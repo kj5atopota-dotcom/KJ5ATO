@@ -185,6 +185,30 @@ h2{margin:0 0 10px;font-size:18px}
       <div class="row"><span class="label">Success Odds</span><span class="value" id="qrpScore">--</span></div>
       <div class="tip" id="qrpAdvice">Waiting for data...</div>
     </div>
+    <div class="card">
+<h3>Advanced Conditions</h3>
+
+<div class="row">
+  <span class="label">Noise Level</span>
+  <span id="noiseLevel" class="value">--</span>
+</div>
+
+<div class="row">
+  <span class="label">DX Window</span>
+  <span id="dxWindow" class="value">--</span>
+</div>
+
+<div class="row">
+  <span class="label">Band Trend</span>
+  <span id="bandTrend" class="value">--</span>
+</div>
+
+<div class="row">
+  <span class="label">Data Status</span>
+  <span id="dataStatus" class="value">OK</span>
+</div>
+
+</div>
   </div>
 
   <div class="footer">Natural State Amateur Radio • NOAA SWPC data • refresh every 5 minutes</div>
@@ -286,6 +310,55 @@ function renderFrom(kp, wind, bz){
   $('kp').textContent = fmt1(kp);
   $('wind').textContent = fmt1(wind, ' km/s');
   $('bz').textContent = fmt1(bz, ' nT');
+  // ===== ADVANCED CONDITIONS =====
+
+// Noise Predictor
+let noise = "Low";
+let noiseClass = "good";
+
+if (kp >= 5 || wind > 500) {
+  noise = "High";
+  noiseClass = "bad";
+} else if (kp >= 3 || wind > 450) {
+  noise = "Moderate";
+  noiseClass = "fair";
+}
+
+document.getElementById("noiseLevel").textContent = noise;
+document.getElementById("noiseLevel").className = "value " + noiseClass;
+
+
+// DX Window
+let dx = "Closed";
+let dxClass = "bad";
+
+if (bz > 0 && kp <= 3) {
+  dx = "Open";
+  dxClass = "good";
+} else if (kp <= 4) {
+  dx = "Possible";
+  dxClass = "fair";
+}
+
+document.getElementById("dxWindow").textContent = dx;
+document.getElementById("dxWindow").className = "value " + dxClass;
+
+
+// Band Trend (POTA GOLD)
+let trend = "Stable";
+
+if (kp <= 2 && bz > 2) {
+  trend = "Bands improving ↑";
+} else if (kp >= 5) {
+  trend = "Bands degrading ↓";
+}
+
+document.getElementById("bandTrend").textContent = trend;
+
+
+// Data Health
+document.getElementById("dataStatus").textContent = "Live";
+document.getElementById("dataStatus").className = "value good";
 
   const m = deriveMetrics(kp, wind, bz);
 
@@ -361,10 +434,14 @@ async function refreshData(){
     const bz = latestNumericFromRows(magData, 6);
 
     renderFrom(kp, wind, bz);
-  }catch(err){
-    console.error(err);
-    $('updatedText').textContent = 'Data load failed. Tap Refresh Now.';
-  }
+}catch(err){
+  console.error(err);
+  $('updatedText').textContent = 'Data load failed. Tap Refresh Now.';
+
+  document.getElementById("dataStatus").textContent = "Error";
+  document.getElementById("dataStatus").className = "value bad";
+}
+
 }
 
 $('refreshBtn').addEventListener('click', refreshData);
