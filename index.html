@@ -425,15 +425,14 @@ async function refreshData(){
   $('updatedText').textContent = 'Refreshing...';
   try{
     const [kpData, windData, magData] = await Promise.all([
-      fetchJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'),
-      fetchJson('https://api.allorigins.win/raw?url=https://services.swpc.noaa.gov/products/solar-wind/plasma-3-day.json'),
-      fetchJson('https://api.allorigins.win/raw?url=https://services.swpc.noaa.gov/products/solar-wind/mag-3-day.json')
-    ]);
+  fetchJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'),
+  fetchJson('https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json'),
+  fetchJson('https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json')
+]);
 
-    const kp = latestKpFromData(kpData);
-    const wind = latestNumericFromRows(windData, 2);
-    const bz = latestNumericFromRows(magData, 3);
-
+const kp = latestKpFromData(kpData);
+const wind = parseFloat(windData[windData.length - 1].proton_speed);
+const bz = parseFloat(magData[magData.length - 1].bz_gsm);
     renderFrom(kp, wind, bz);
 }catch(err){
   console.error(err);
