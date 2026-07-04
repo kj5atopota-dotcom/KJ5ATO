@@ -238,8 +238,8 @@ function setBandStatus(id, score){
 }
 
 function signalLabelFrom(score){
-  if (score >= 80) return ['Strong', 'good'];
-  if (score >= 55) return ['Moderate', 'fair'];
+  if (score >= 75) return ['Strong', 'good'];
+  if (score >= 45) return ['Moderate', 'fair'];
   return ['Poor', 'bad'];
 }
 
@@ -256,10 +256,10 @@ function deriveMetrics(kp, wind, bz){
 
   // Storm-aware propagation score tuned for ham use.
   let health = 100;
-  health -= safeKp * 10.5;
-  health -= Math.max(0, safeWind - 420) * 0.06;
-  if (safeBz < 0) health -= Math.abs(safeBz) * 1.4;
-  else health += Math.min(10, safeBz * 0.9);
+  health -= safeKp * 7.5;
+  health -= Math.max(0, safeWind - 500) * 0.04;
+ if (safeBz < 0) health -= Math.abs(safeBz) * 2.0;
+else health += Math.min(15, safeBz * 1.5);
   health = clamp(health, 5, 100);
 
   // Simple MUF / LUF estimates that react sanely to storms.
