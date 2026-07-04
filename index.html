@@ -426,13 +426,13 @@ async function refreshData(){
   try{
     const [kpData, windData, magData] = await Promise.all([
       fetchJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'),
-      fetchJson('https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json'),
-      fetchJson('https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json')
+      fetchJson('https://services.swpc.noaa.gov/products/solar-wind/plasma-3-day.json'),
+      fetchJson('https://services.swpc.noaa.gov/products/solar-wind/mag-3-day.json')
     ]);
 
     const kp = latestKpFromData(kpData);
     const wind = latestNumericFromRows(windData, 2);
-    const bz = latestNumericFromRows(magData, 6);
+    const bz = latestNumericFromRows(magData, 3);
 
     renderFrom(kp, wind, bz);
 }catch(err){
