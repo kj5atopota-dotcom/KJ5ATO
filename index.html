@@ -426,8 +426,8 @@ async function refreshData(){
   try{
     const [kpData, windData, magData] = await Promise.all([
       fetchJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'),
-      fetchJson('https://services.swpc.noaa.gov/products/solar-wind/plasma-3-day.json'),
-      fetchJson('https://services.swpc.noaa.gov/products/solar-wind/mag-3-day.json')
+      fetchJson('https://api.allorigins.win/raw?url=https://services.swpc.noaa.gov/products/solar-wind/plasma-3-day.json'),
+      fetchJson('https://api.allorigins.win/raw?url=https://services.swpc.noaa.gov/products/solar-wind/mag-3-day.json')
     ]);
 
     const kp = latestKpFromData(kpData);
