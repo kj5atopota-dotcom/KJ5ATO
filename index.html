@@ -273,7 +273,7 @@ else health += Math.min(15, safeBz * 1.5);
   const bands = {
     80: clamp(88 - safeKp * 4 - Math.max(0, safeWind - 500) * 0.02 + Math.max(0, -safeBz) * 0.1, 5, 100),
     40: clamp(84 - safeKp * 6 - Math.max(0, safeWind - 480) * 0.03 + Math.max(0, -safeBz) * 0.05, 5, 100),
-    20: clamp(85 - safeKp * 8 - Math.max(0, safeWind - 500) * 0.04 + Math.max(0, safeBz) * 0.8, 5, 100),
+    20: clamp(92 - safeKp * 6 - Math.max(0, safeWind - 520) * 0.03 + Math.max(0, safeBz) * 1.0, 5, 100),
     15: clamp(72 - safeKp * 10 - Math.max(0, safeWind - 500) * 0.05 + Math.max(0, safeBz) * 0.9, 5, 100),
     10: clamp(60 - safeKp * 12 - Math.max(0, safeWind - 500) * 0.06 + Math.max(0, safeBz) * 1.0, 5, 100),
   };
@@ -281,7 +281,7 @@ else health += Math.min(15, safeBz * 1.5);
   // MUF gating
   if (muf < 22) bands[10] = Math.min(bands[10], 35);
   if (muf < 18) bands[15] = Math.min(bands[15], 38);
-  if (muf < 13) bands[20] = Math.min(bands[20], 42);
+  if (muf < 10) bands[20] = Math.min(bands[20], 42);
   if (muf > 10) bands[80] = Math.max(20, bands[80] - 10);
 
   // Best band
